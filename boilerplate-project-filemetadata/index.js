@@ -28,7 +28,6 @@ const upload = multer({ storage });
 // Route to handle single file upload
 app.post('/api/upload', upload.single('upfile'), (req, res) => {
   const { size, originalname, mimetype } = req.file
-  res.send(`File uploaded successfully: ${req.file.filename}`);
   res.send(200).json({
     name: originalname,
     type:mimetype,
