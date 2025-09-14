@@ -26,9 +26,9 @@ app.get('/', function (req, res) {
 const upload = multer({ storage });
 
 // Route to handle single file upload
-app.post('/api/upload', upload.single('upfile'), (req, res) => {
+app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
   const { size, originalname, mimetype } = req.file
-  res.send(200).json({
+  res.status(200).json({
     name: originalname,
     type:mimetype,
     size
