@@ -75,7 +75,8 @@ const createUser = (req, res) => {
 
         if (data) {
             return res.status(201).json({
-              data
+              username:data.username,
+              _id:data._id
             })
         }
     })
@@ -102,8 +103,8 @@ const formatDate = (date) => {
 const createExercise = async (req, res) => {
   let userId = req.params._id
   let exerciseObject = {
-    description: req.body.description,
-    duration: req.body.duration,
+    description: req.body.description.trim(),
+    duration: parseInt(req.body.duration),
     date: returnDateFormat(req.body.date)
   }
 
@@ -131,8 +132,8 @@ const createExercise = async (req, res) => {
 
         if (data) {
             return res.status(201).json({
-              username: userData.username,
               _id: userData._id,
+              username: userData.username,
               ...exerciseObject,
               date: formatDate(exerciseObject.date),
             })
@@ -179,17 +180,16 @@ const getUserLogs = async (req, res) => {
 
   let userLogs = await User.aggregate([
     {
-      $match: {
-        _id: new mongoose.Types.ObjectId(userId),
-      },
-    },
-    {
       $lookup: {
         from: "logs",
         localField: "user",
         foreignField: "userId",
         as: "logs",
         pipeline: [...pipelineArray,
+          {
+            $match: {
+          user: new mongoose.Types.ObjectId(userId)
+        }},
           {
           $project: {
             __v: 0,
@@ -207,6 +207,12 @@ const getUserLogs = async (req, res) => {
     },
   ])
 
+  if (!userLogs.length) {
+    return res.status(200).json({
+      message: "User does not exist"
+    })
+  }
+
   const responseData = userLogs[0].logs.map((log) => {
     return {
       ...log,
@@ -214,14 +220,17 @@ const getUserLogs = async (req, res) => {
     }
   })
 
+  const count = responseData.length
+
   return res.status(200).json({
     ...userLogs[0],
+    count,
     logs: responseData
   })
 }
 
 
-app.post("/api/user", createUser);
+app.post("/api/users", createUser);
 app.get("/api/users", getAllUsers);
 app.post("/api/users/:_id/exercises", createExercise);
 app.get("/api/users/:_id/logs", getUserLogs)
