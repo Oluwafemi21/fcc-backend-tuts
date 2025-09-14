@@ -200,8 +200,6 @@ const getUserLogs = async (req, res) => {
     },
   ])
 
-  console.log(userLogs)
-
   if (!userLogs.length) {
     return res.status(200).json({
       message: "User does not exist"
