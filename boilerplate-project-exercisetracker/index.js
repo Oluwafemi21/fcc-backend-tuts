@@ -157,31 +157,16 @@ const getUserLogs = async (req, res) => {
   let dateMatchingPipeline = null
   if (from || to) dateMatchingPipeline = {}
   if (from) dateMatchingPipeline.$gte = new Date(from)
-  if (to) dateMatchingPipeline.$lt = addDay(to, 1)
+  if (to) dateMatchingPipeline.$lt = new Date(to)
   
 
   // find the log with the userId and return all of the logs
-  let pipelineArray = [];
-  if (dateMatchingPipeline) {
-    pipelineArray.push({
-      $match: {
-        date: dateMatchingPipeline
-      }
-    })
-  }
-
-  if (itemsPerPage && itemsPerPage > 0) {
-    pipelineArray.push({
-      $limit: itemsPerPage
-    })
-  }
-
-  
+  let pipelineArray = [];  
 
   let userLogs = await User.aggregate([
     {
       $match: {
-        _id: new mongoose.Types.ObjectId(userId) 
+        _id: new mongoose.Types.ObjectId(userId)
       }
     },
     {
@@ -193,15 +178,18 @@ const getUserLogs = async (req, res) => {
         pipeline: [...pipelineArray,
           {
             $match: {
-          user: new mongoose.Types.ObjectId(userId)
-        }},
+              user: new mongoose.Types.ObjectId(userId),
+              ...(dateMatchingPipeline && { date: dateMatchingPipeline})
+              }
+          },
           {
           $project: {
             __v: 0,
               user: 0,
               _id: 0,
           },
-        },
+          },
+          ...(itemsPerPage && itemsPerPage > 0 ? [{ $limit: itemsPerPage }] : [])
         ]
       },
     },
@@ -211,6 +199,8 @@ const getUserLogs = async (req, res) => {
       }
     },
   ])
+
+  console.log(userLogs)
 
   if (!userLogs.length) {
     return res.status(200).json({
