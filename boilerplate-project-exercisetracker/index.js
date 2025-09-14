@@ -180,11 +180,16 @@ const getUserLogs = async (req, res) => {
 
   let userLogs = await User.aggregate([
     {
+      $match: {
+        _id: new mongoose.Types.ObjectId(userId) 
+      }
+    },
+    {
       $lookup: {
         from: "logs",
         localField: "user",
         foreignField: "userId",
-        as: "logs",
+        as: "log",
         pipeline: [...pipelineArray,
           {
             $match: {
@@ -213,10 +218,10 @@ const getUserLogs = async (req, res) => {
     })
   }
 
-  const responseData = userLogs[0].logs.map((log) => {
+  const responseData = userLogs[0].log.map((singleLog) => {
     return {
-      ...log,
-      date: formatDate(log.date)
+      ...singleLog,
+      date: formatDate(singleLog.date),
     }
   })
 
@@ -225,7 +230,9 @@ const getUserLogs = async (req, res) => {
   return res.status(200).json({
     ...userLogs[0],
     count,
-    logs: responseData
+    log: responseData,
+    ...(from && {from: formatDate(from)}),
+    ...(to && {to: formatDate(to)}),
   })
 }
 
